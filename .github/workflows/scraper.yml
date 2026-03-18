@@ -1,28 +1,26 @@
 name: Job Scraper Automation
 
 on:
-schedule:
-- cron: '30 11 * * *'
-workflow_dispatch:
+  schedule:
+    - cron: '30 11 * * *'
+  workflow_dispatch:
 
 jobs:
-run-scraper:
-runs-on: ubuntu-latest
+  run-scraper:
+    runs-on: ubuntu-latest
 
-```
-steps:
-  - name: Checkout repo
-    uses: actions/checkout@v3
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
-  - name: Set up Python
-    uses: actions/setup-python@v4
-    with:
-      python-version: '3.10'
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
 
-  - name: Install dependencies
-    run: |
-      pip install pandas requests beautifulsoup4 openpyxl
+      - name: Install dependencies
+        run: |
+          pip install pandas requests beautifulsoup4 openpyxl
 
-  - name: Run scraper
-    run: python Scrapper_to_excel_with_link.py
-```
+      - name: Run scraper
+        run: python Scrapper_to_excel_with_link.py
