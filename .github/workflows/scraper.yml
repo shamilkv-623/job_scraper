@@ -2,12 +2,15 @@ name: Job Scraper Automation
 
 on:
   schedule:
-    - cron: '30 11 * * *'   # runs once daily at 5 PM IST
+    - cron: '30 11 * * *'   # 5:00 PM IST
   workflow_dispatch:
 
 jobs:
   run-scraper:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write   # ✅ IMPORTANT (without this push fails)
 
     steps:
       - name: Checkout repo
@@ -20,15 +23,16 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pandas requests beautifulsoup4 openpyxl pytz
+          pip install pandas requests beautifulsoup4 openpyxl
 
       - name: Run scraper
         run: python Scrapper_to_excel_with_link.py
 
+      # ✅ THIS PART WAS MISSING
       - name: Commit and push Excel file
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
           git add *.xlsx
-          git commit -m "Auto-update scraped jobs data" || echo "No changes"
+          git commit -m "Auto-update jobs data" || echo "No changes"
           git push
