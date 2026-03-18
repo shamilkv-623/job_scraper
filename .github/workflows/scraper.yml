@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write   # ✅ IMPORTANT (without this push fails)
+      contents: write   # ✅ VERY IMPORTANT
 
     steps:
       - name: Checkout repo
@@ -28,7 +28,6 @@ jobs:
       - name: Run scraper
         run: python Scrapper_to_excel_with_link.py
 
-      # ✅ THIS PART WAS MISSING
       - name: Commit and push Excel file
         run: |
           git config --global user.name "github-actions"
