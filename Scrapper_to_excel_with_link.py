@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 from datetime import datetime
+import pytz
 
 
 KEYWORDS = [
@@ -36,34 +37,23 @@ COMPANY_SITES = {
 
 
 def is_relevant(text):
-
     text = text.lower()
-
-    for keyword in KEYWORDS:
-        if keyword in text:
-            return True
-
-    return False
+    return any(keyword in text for keyword in KEYWORDS)
 
 
 def scrape_nomura(url):
-
     headers = {"User-Agent": "Mozilla/5.0"}
 
     response = requests.get(url, headers=headers)
-
     soup = BeautifulSoup(response.text, "html.parser")
 
     jobs = []
-
     rows = soup.select("table tr")
 
     for row in rows:
-
         cols = row.find_all("td")
 
         if len(cols) >= 3:
-
             title = cols[0].get_text(strip=True).split("\n")[0]
             location = cols[2].get_text(strip=True)
 
@@ -75,7 +65,6 @@ def scrape_nomura(url):
                 link = url
 
             if is_relevant(title):
-
                 jobs.append({
                     "Company": "Nomura",
                     "Title": title,
@@ -87,60 +76,72 @@ def scrape_nomura(url):
 
 
 def generic_scraper(url, company):
-
     headers = {"User-Agent": "Mozilla/5.0"}
 
     response = requests.get(url, headers=headers)
-
     soup = BeautifulSoup(response.text, "html.parser")
 
     jobs = []
 
     for link in soup.find_all("a", href=True):
-
         text = link.get_text(strip=True)
 
-        if is_relevant(text):
+        # 🔥 filter noise
+        if is_relevant(text) and len(text) > 10:
+
+            href = link["href"]
+
+            # handle relative links
+            if href.startswith("/"):
+                href = url.rstrip("/") + href
 
             jobs.append({
                 "Company": company,
                 "Title": text,
                 "Location": "Check site",
-                "Link": link["href"]
+                "Link": href
             })
 
     return jobs
 
 
 def main():
-
     all_jobs = []
 
     for company, url in COMPANY_SITES.items():
-
         print("Checking:", company)
 
         try:
-
             if company == "Nomura":
                 jobs = scrape_nomura(url)
-
             else:
                 jobs = generic_scraper(url, company)
 
             all_jobs.extend(jobs)
 
         except Exception as e:
-
             print("Error scraping", company, e)
 
+    # ✅ Convert to DataFrame
     df = pd.DataFrame(all_jobs)
 
-    filename = f"jobs_{datetime.today().date()}.xlsx"
+    if df.empty:
+        print("No jobs found.")
+        return
 
+    # ✅ Remove duplicates
+    df = df.drop_duplicates(subset=["Title", "Company"])
+
+    # ✅ IST timezone fix
+    ist = pytz.timezone('Asia/Kolkata')
+    today = datetime.now(ist).date()
+
+    filename = f"jobs_{today}.xlsx"
+
+    # ✅ Save file
     df.to_excel(filename, index=False)
 
-    print("\nSaved jobs to:", filename)
+    print(f"\nSaved {len(df)} jobs to: {filename}")
 
 
 if __name__ == "__main__":
