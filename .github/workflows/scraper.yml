@@ -2,8 +2,8 @@ name: Job Scraper Automation
 
 on:
   schedule:
-    - cron: '30 11 * * *'   # Runs at 5:00 PM IST daily
-  workflow_dispatch:        # Allows you to run it manually from the "Actions" tab
+    - cron: '30 11 * * *'   # 5:00 PM IST
+  workflow_dispatch:
 
 jobs:
   run-scraper:
@@ -16,7 +16,6 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          # Fetch full history to allow proper merging/rebasing
           fetch-depth: 0
 
       - name: Set up Python
@@ -33,21 +32,18 @@ jobs:
         run: python Scrapper_to_excel_with_link.py
 
       - name: Commit and push Excel file
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          
-          # 1. Pull latest changes first to sync the runner with the repo
-          git pull origin main --rebase
-          
-          # 2. Add the specific master file
-          # Ensure this name matches exactly what is in your Python script
+
+          # 1. Add changes FIRST
           git add Job_Listings_Master.xlsx
-          
-          # 3. Commit the changes
+
+          # 2. Commit (safe)
           git commit -m "Auto-update jobs data: $(date +'%Y-%m-%d')" || echo "No changes to commit"
-          
-          # 4. Push the synchronized work back to GitHub
+
+          # 3. Pull latest changes AFTER commit (important)
+          git pull origin main --rebase
+
+          # 4. Push
           git push origin main
