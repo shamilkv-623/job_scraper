@@ -36,14 +36,21 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-          # 1. Add changes FIRST
-          git add Job_Listings_Master.xlsx
+          # 1. Add ALL Excel files (fixes filename mismatch issue)
+          git add *.xlsx || echo "No Excel files found"
 
-          # 2. Commit (safe)
+          # 2. Commit safely
           git commit -m "Auto-update jobs data: $(date +'%Y-%m-%d')" || echo "No changes to commit"
 
-          # 3. Pull latest changes AFTER commit (important)
-          git pull origin main --rebase
+          # 3. Rebase with latest remote (critical fix)
+          git pull --rebase origin main || (
+            echo "Rebase failed, aborting..." &&
+            git rebase --abort
+          )
 
-          # 4. Push
-          git push origin main
+          # 4. Push with retry (handles concurrency issues)
+          git push origin main || (
+            echo "Push failed, retrying..." &&
+            git pull --rebase origin main &&
+            git push origin main
+          )
